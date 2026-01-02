@@ -1,0 +1,30 @@
+# --- Dữ liệu và Model (Nặng) ---
+# Loại bỏ toàn bộ thư mục datasets (bao gồm raw, processed, logs)
+datasets/
+# Loại bỏ thư mục huggingface (thường chứa cache của model/weights)
+huggingface/
+# Loại bỏ các tệp tin có định dạng model phổ biến
+*.pth
+*.pt
+*.bin
+*.onnx
+
+# --- Môi trường và Cấu hình (Nhạy cảm/Riêng biệt) ---
+# Loại bỏ môi trường ảo
+venv/
+.venv/
+env/
+# Loại bỏ tệp chứa biến môi trường và thông tin bí mật
+.env
+.secrets
+token.txt
+
+# --- Python & Jupyter Notebook (Tạm thời) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# --- Hệ thống ---
+.DS_Store
+Thumbs.db
