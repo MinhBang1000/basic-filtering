@@ -1,3 +1,8 @@
+# Chú ý:
+- Học lại về các độ đo
+- Coi các giải thuật lại
+- Test bằng một SOTA method
+
 1. Các giải pháp mới cho layer 1
 - Perplexity
 - Semantic Divergence (Độ lệch ngữ nghĩa) qua Sliding Window: Nếu Cosine Similarity giảm đột ngột (ví dụ từ 0.8 xuống 0.2), đó là dấu hiệu của một sự chuyển đổi chủ đề (Topic Shift) không mong muốn.
@@ -14,4 +19,10 @@
 2. Optimization:
 - Xử lý dữ liệu
 - Data Augementation
-
+    - GCG 
+        -> Thay đổi temperature để các target-string khác nhau
+        -> Quá chậm không thể generate cho toàn tập dolly 15k được
+    - AutoDAN: Dựa trên benign mà generate nhanh hơn -> Nhược điểm là chỉ có direct prompt injection
+    - Rewrite-to-Jailbreak (R2J): Nhìn jailbreak là paraphrasing problem
+    - Template: DONE
+- Khả năng tự thích ứng

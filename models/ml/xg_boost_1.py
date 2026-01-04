@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import pandas as pd
 import spacy
+import time
 from datasets import load_dataset
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from sentence_transformers import SentenceTransformer, util
@@ -104,8 +105,14 @@ print("\nĐang huấn luyện XGBoost...")
 xgb_model.fit(X_train, y_train)
 
 # Đánh giá
+start = time.perf_counter()
 y_prob = xgb_model.predict_proba(X_test)[:, 1]
 y_pred = xgb_model.predict(X_test)
+end = time.perf_counter()
+total_time = end - start
+avg_time_per_sample = total_time / len(X_test)
+print(f"Total inference time: {total_time:.4f} seconds")
+print(f"Avg inference time per sample: {avg_time_per_sample*1000:.4f} ms")
 
 print("\n" + "="*40)
 print("KẾT QUẢ ĐÁNH GIÁ VỚI XGBOOST NÂNG CẤP")

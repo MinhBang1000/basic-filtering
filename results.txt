@@ -59,3 +59,13 @@ Feature Importance (XGBoost):
 - Max-Semantic-Div  : 0.2910
 - Log-PPL           : 0.1053
 - Instr-Density     : 0.1005
+
+version comparable_baseline.py
+============================================================
+FINAL BENCHMARK SUMMARY (QUALIFIRE TEST SET)
+============================================================
+                              Model      AUC Latency (ms)
+deberta-v3-base-prompt-injection-v2 0.831784        14.16
+                Your Custom XGBoost 0.809249   N/A (Fast)
+        distilbert-prompt-injection 0.787765         3.39
+          deberta-v3-base-injection 0.777050        13.00
