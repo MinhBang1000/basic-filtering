@@ -1,0 +1,17 @@
+1. Các giải pháp mới cho layer 1
+- Perplexity
+- Semantic Divergence (Độ lệch ngữ nghĩa) qua Sliding Window: Nếu Cosine Similarity giảm đột ngột (ví dụ từ 0.8 xuống 0.2), đó là dấu hiệu của một sự chuyển đổi chủ đề (Topic Shift) không mong muốn.
+- Topic Drift Score: LDA (Latent Dirichlet Allocation) hoặc BERTopic.
+- Instruction Density & Imperative Ratio (Mật độ câu lệnh)
+- Cross-Attention Entropy (Độ tự do của sự chú ý)
+- Yếu tố kết hợp:
+    - PPL Spike
+    - Semantic Divergence
+    - Imperative Ratio
+    => Dùng chúng như các features cho Random Forest
+
+
+2. Optimization:
+- Xử lý dữ liệu
+- Data Augementation
+

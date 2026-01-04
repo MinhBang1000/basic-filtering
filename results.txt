@@ -1,0 +1,61 @@
+Version: Random Forest
+==============================
+KẾT QUẢ ĐÁNH GIÁ NÂNG CẤP (RANDOM FOREST)
+==============================
+              precision    recall  f1-score   support
+
+      benign       0.83      0.60      0.70       900
+   jailbreak       0.58      0.82      0.68       600
+
+    accuracy                           0.69      1500
+   macro avg       0.71      0.71      0.69      1500
+weighted avg       0.73      0.69      0.69      1500
+
+ROC AUC Score: 0.7957
+Feature Log-PPL: 0.2448
+Feature Max-Semantic-Div: 0.4285
+Feature Instr-Density: 0.1813
+Feature Keyword-Count: 0.1455
+
+Version XGBoost:
+========================================
+KẾT QUẢ ĐÁNH GIÁ VỚI XGBOOST NÂNG CẤP
+========================================
+              precision    recall  f1-score   support
+
+           0       0.83      0.63      0.72       900
+           1       0.59      0.81      0.68       600
+
+    accuracy                           0.70      1500
+   macro avg       0.71      0.72      0.70      1500
+weighted avg       0.74      0.70      0.70      1500
+
+ROC AUC Score: 0.8030
+
+Feature Importance (XGBoost):
+- Keyword-Count     : 0.4290
+- Max-Semantic-Div  : 0.3145
+- Instr-Density     : 0.1495
+- Log-PPL           : 0.1070
+
+
+version XGBOOST 1
+========================================
+KẾT QUẢ ĐÁNH GIÁ VỚI XGBOOST NÂNG CẤP
+========================================
+              precision    recall  f1-score   support
+
+           0       0.84      0.62      0.71       900
+           1       0.59      0.82      0.69       600
+
+    accuracy                           0.70      1500
+   macro avg       0.72      0.72      0.70      1500
+weighted avg       0.74      0.70      0.70      1500
+
+ROC AUC Score: 0.8137
+
+Feature Importance (XGBoost):
+- Keyword-Count     : 0.5032
+- Max-Semantic-Div  : 0.2910
+- Log-PPL           : 0.1053
+- Instr-Density     : 0.1005
