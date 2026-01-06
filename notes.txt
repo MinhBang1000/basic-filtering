@@ -1,5 +1,10 @@
 # Chú ý:
 - Học lại về các độ đo
+    - Trung bình mean
+    - Độ lệch chuẩn
+    - Phân phối Gaussian
+    - inflate
+    - AUC
 - Coi các giải thuật lại
 - Test bằng một SOTA method
 
@@ -25,4 +30,15 @@
     - AutoDAN: Dựa trên benign mà generate nhanh hơn -> Nhược điểm là chỉ có direct prompt injection
     - Rewrite-to-Jailbreak (R2J): Nhìn jailbreak là paraphrasing problem
     - Template: DONE
+    - EasyJailBreak
+    - Host another LLM that can refactor Dolly dataset follow our Agent.
 - Khả năng tự thích ứng
+
+3. Concrete Plan
+Giải pháp của tôi là một hệ thống phòng thủ 3 lớp (3-layer defense) thiết lập cơ chế Zero Trust tại cửa ngõ đầu vào của AI Agent để ngăn chặn tấn công injection 
+đa nguồn (User, Tool Outputs, Memory). Lớp thứ nhất sử dụng mô hình phát hiện bất thường (Anomaly Detection) được huấn luyện hoàn toàn trên dữ liệu lành tính (benign data) 
+đặc thù của doanh nghiệp để phân loại nhanh đầu vào thành hai nhóm: Bình thường (Normal) hoặc Nghi ngờ (Suspicious). Lớp thứ hai áp dụng các bộ quy tắc (Rule-based) 
+hoặc mô hình AI siêu nhẹ để nhận diện và loại bỏ tức thì các mẫu tấn công đã biết (well-known attacks) bên trong nhóm Nghi ngờ. Lớp cuối cùng sử dụng mô hình Transformer 
+hoặc LLM để thẩm định chuyên sâu, giúp phân biệt chính xác giữa dữ liệu lành tính mới (zero-day benign) và mã độc mới (zero-day malicious) trong số các mẫu nghi ngờ còn lại, 
+từ đó giảm tối đa tỷ lệ báo động giả (FPR) và đảm bảo an toàn tuyệt đối trước khi dữ liệu được Agent xử lý.
+

@@ -20,6 +20,7 @@ Plug & play:
     python benchmark_layer1.py
 """
 
+import argparse
 import os
 import time
 import math
