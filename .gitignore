@@ -1,6 +1,11 @@
 # --- Dữ liệu và Model (Nặng) ---
 # Loại bỏ toàn bộ thư mục datasets (bao gồm raw, processed, logs)
-datasets/
+datasets/*.jsonl
+datasets/*.csv
+datasets/*.tsv
+datasets/*.parquet
+datasets/*.zip
+datasets/*.tar.gz
 # Loại bỏ thư mục huggingface (thường chứa cache của model/weights)
 huggingface/
 # Loại bỏ các tệp tin có định dạng model phổ biến
