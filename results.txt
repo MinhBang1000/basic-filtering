@@ -69,3 +69,148 @@ deberta-v3-base-prompt-injection-v2 0.831784        14.16
                 Your Custom XGBoost 0.809249   N/A (Fast)
         distilbert-prompt-injection 0.787765         3.39
           deberta-v3-base-injection 0.777050        13.00
+
+
+
+JAN 7, 2026 ______________________________________________________________________________
+
+(venv) bang@jarvis:~/projects/models$ python ./layer_1_v2.py --minilm
+
+[INFO] Mode: LOCAL | Model: all-MiniLM-L6-v2 | Dimensions: 384
+
+[1/5] Loading Dolly 15K (Benign)...
+Generating train split: 15011 examples [00:00, 678039.32 examples/s]
+[2/5] Loading Suspicious Data from ../datasets/deepset_prompt_injections_refactored.jsonl...
+[3/5] Generating Embeddings...
+Batches: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████| 235/235 [00:05<00:00, 45.70it/s]
+Batches: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 11/11 [00:01<00:00,  8.92it/s]
+[4/5] Training Models...
+  > IsolationForest...
+  > OneClassSVM...
+  > kNN-Distance...
+  > PCA-Reconstruction...
+  > Deep AutoEncoder...
+
+============================================================
+RESULTS FOR all-MiniLM-L6-v2 (Dolly vs. Suspicious)
+============================================================
+             Model      TNR  Suspicious_Det_Rate      AUC  Lat_sec
+       OneClassSVM 0.940393             0.983384 0.996709 1.031372
+PCA-Reconstruction 0.950383             0.974320 0.993401 0.135793
+      kNN-Distance 0.933400             0.974320 0.993052 0.207031
+  Deep-AutoEncoder 0.936730             0.977341 0.991601 0.557553
+   IsolationForest 0.949051             0.524169 0.893764 0.134543
+(venv) bang@jarvis:~/projects/models$ python ./layer_1_v2.py --openai
+
+[INFO] Mode: OPENAI | Model: text-embedding-3-large | Dimensions: 3072
+
+[1/5] Loading Dolly 15K (Benign)...
+[2/5] Loading Suspicious Data from ../datasets/deepset_prompt_injections_refactored.jsonl...
+[3/5] Generating Embeddings...
+OpenAI Embedding: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 235/235 [03:35<00:00,  1.09it/s]
+OpenAI Embedding: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 11/11 [00:10<00:00,  1.01it/s]
+[4/5] Training Models...
+  > IsolationForest...
+  > OneClassSVM...
+  > kNN-Distance...
+  > PCA-Reconstruction...
+  > Deep AutoEncoder...
+
+============================================================
+RESULTS FOR text-embedding-3-large (Dolly vs. Suspicious)
+============================================================
+             Model      TNR  Suspicious_Det_Rate      AUC   Lat_sec
+PCA-Reconstruction 0.939394             1.000000 0.999807  5.812790
+  Deep-AutoEncoder 0.940726             1.000000 0.999768  1.114689
+       OneClassSVM 0.937729             1.000000 0.999622 10.413556
+      kNN-Distance 0.929404             1.000000 0.999259  1.311861
+   IsolationForest 0.944056             0.889728 0.975960  0.209815
+(venv) bang@jarvis:~/projects/models$ python ./layer_1_v2.py --bert
+
+[INFO] Mode: LOCAL | Model: bert-base-nli-mean-tokens | Dimensions: 768
+
+[1/5] Loading Dolly 15K (Benign)...
+[2/5] Loading Suspicious Data from ../datasets/deepset_prompt_injections_refactored.jsonl...
+[3/5] Generating Embeddings...
+Batches: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████| 235/235 [00:21<00:00, 10.75it/s]
+Batches: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 11/11 [00:00<00:00, 13.98it/s]
+[4/5] Training Models...
+  > IsolationForest...
+  > OneClassSVM...
+  > kNN-Distance...
+  > PCA-Reconstruction...
+  > Deep AutoEncoder...
+
+============================================================
+RESULTS FOR bert-base-nli-mean-tokens (Dolly vs. Suspicious)
+============================================================
+             Model      TNR  Suspicious_Det_Rate      AUC  Lat_sec
+PCA-Reconstruction 0.945055             0.998489 0.999271 0.380330
+  Deep-AutoEncoder 0.935398             0.998489 0.999095 0.762366
+      kNN-Distance 0.938062             0.998489 0.999041 0.391568
+       OneClassSVM 0.950050             0.989426 0.996108 2.231625
+   IsolationForest 0.950050             0.953172 0.988440 0.146600
+
+Layer 2 - BENCHMARK
+=== Latency Benchmark (ms per detect call) ===
+AhoCorasick | avg=0.0009  p50=0.0009  p95=0.0010  p99=0.0010  min=0.0009  max=0.0055  matches=0
+Regex       | avg=1.1709  p50=1.1521  p95=1.2888  p99=1.4946  min=1.1175  max=2.0124  matches=0
+Bisect      | avg=0.8418  p50=0.8320  p95=0.8826  p99=1.0625  min=0.8097  max=1.7356  matches=0
+
+
+More benchmark:
+[*] Starting Comprehensive Benchmark (1000 iterations per sample)...
+    > Testing Sample: Classic_Jailbreak
+    > Testing Sample: Indirect_Injection_Email
+    > Testing Sample: RAG_Poisoning_Doc
+    > Testing Sample: Malicious_Tool_Output
+    > Testing Sample: Benign_Corporate_Task
+
+================================================================================
+LAYER 2 COMPREHENSIVE BENCHMARK RESULTS
+================================================================================
++--------------------------+---------------+----------------+---------------+-------------+-------------+---------------------------------------------------------------+
+| Sample                   | Detector      | Is_Malicious   |   Match_Count |      Avg_ms |      P95_ms | Matched_Patterns                                              |
+|--------------------------+---------------+----------------+---------------+-------------+-------------+---------------------------------------------------------------|
+| Classic_Jailbreak        | Aho-Corasick  | True           |             1 | 0.000611909 | 0.000646929 | ['reveal your system prompt']                                 |
+| Classic_Jailbreak        | Regex-Full    | True           |             1 | 0.341959    | 0.375458    | ['reveal your system prompt']                                 |
+| Classic_Jailbreak        | Bisect-Search | True           |             1 | 0.184494    | 0.205836    | ['reveal your system prompt']                                 |
+| Indirect_Injection_Email | Aho-Corasick  | False          |             0 | 0.000627085 | 0.000664033 | []                                                            |
+| Indirect_Injection_Email | Regex-Full    | False          |             0 | 0.560254    | 0.613716    | []                                                            |
+| Indirect_Injection_Email | Bisect-Search | False          |             0 | 0.208558    | 0.233089    | []                                                            |
+| RAG_Poisoning_Doc        | Aho-Corasick  | True           |             3 | 0.000906333 | 0.000936817 | ['sudo access', 'bypass security', 'bypass security filters'] |
+| RAG_Poisoning_Doc        | Regex-Full    | True           |             2 | 0.468032    | 0.521628    | ['sudo access', 'Bypass security']                            |
+| RAG_Poisoning_Doc        | Bisect-Search | True           |             3 | 0.239432    | 0.260387    | ['sudo access', 'bypass security', 'bypass security filters'] |
+| Malicious_Tool_Output    | Aho-Corasick  | True           |             1 | 0.000738524 | 0.000767002 | ['developer mode enabled']                                    |
+| Malicious_Tool_Output    | Regex-Full    | True           |             1 | 0.493548    | 0.550284    | ['Developer mode enabled']                                    |
+| Malicious_Tool_Output    | Bisect-Search | True           |             1 | 0.246765    | 0.290774    | ['developer mode enabled']                                    |
+| Benign_Corporate_Task    | Aho-Corasick  | False          |             0 | 0.000742558 | 0.000751886 | []                                                            |
+| Benign_Corporate_Task    | Regex-Full    | False          |             0 | 0.625818    | 0.680482    | []                                                            |
+| Benign_Corporate_Task    | Bisect-Search | False          |             0 | 0.237334    | 0.263846    | []                                                            |
++--------------------------+---------------+----------------+---------------+-------------+-------------+---------------------------------------------------------------+
+
+
+# LAYER 3
+============================================================
+LAYER 3 (LLM AUDITOR) PERFORMANCE METRICS
+============================================================
+Total Samples: 100
+Confusion Matrix: TN=82 FP=3 FN=2 TP=13
+TPR (Recall/Sensitivity): 0.8667
+FPR (Fall-out):           0.0353
+Precision:               0.8125
+Accuracy:                0.9500
+============================================================
+[OK] Detailed results saved to: layer3_deepset_eval_results.csv
+[OK] No API/format errors detected.
+
+Latency (ms):
+count     100.000000
+mean     1306.302182
+std       271.377525
+min       885.712257
+50%      1222.946056
+90%      1627.335957
+95%      1789.091123
+99%      2070.940932
+max      2488.601944

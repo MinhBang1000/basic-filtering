@@ -33,6 +33,8 @@
     - EasyJailBreak
     - Host another LLM that can refactor Dolly dataset follow our Agent.
 - Khả năng tự thích ứng
+- Mô hình layer 2 gợi ý nghi ngờ cho layer 3
+- Test thêm các mô hình chat gpt khác nữa
 
 3. Concrete Plan
 Giải pháp của tôi là một hệ thống phòng thủ 3 lớp (3-layer defense) thiết lập cơ chế Zero Trust tại cửa ngõ đầu vào của AI Agent để ngăn chặn tấn công injection 
