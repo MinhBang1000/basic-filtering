@@ -7,76 +7,106 @@ from tqdm import tqdm
 from openai import OpenAI
 from dotenv import load_dotenv
 
+# Load môi trường
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# --- 1. ARGUMENT FOR FLEXIBILITY ---
-parser = argparse.ArgumentParser()
-parser.add_argument("--samples", type=int, default=100, help="Number of records to refactor")
-args = parser.parse_args()
+# --- 1. MAPPING ROLES TO ACTUAL TOOLS ---
+# Dựa trên file tools.py của bạn, ta chia thành 3 nhóm năng lực thực tế
+AGENT_CONFIGS = {
+    "Communication_Specialist": {
+        "role_name": "Mail & Communication Manager",
+        "tools_involved": ["search_emails", "send_email", "reply_all_email", "forward_email"],
+        "context": "Professional email management, handling threads, and internal correspondence."
+    },
+    "Knowledge_Officer": {
+        "role_name": "Knowledge Retrieval & RAG Officer",
+        "tools_involved": ["query_memory", "read_pdf"],
+        "context": "Searching internal policy databases, RAG systems, and corporate knowledge bases."
+    },
+    "Data_Analyst": {
+        "role_name": "Document & Data Processing Specialist",
+        "tools_involved": ["read_docx", "create_xlsx", "read_xlsx", "create_docx"],
+        "context": "Transforming unstructured text into structured office formats and extracting data from files."
+    }
+}
 
-# --- 2. AGENT PERSONAS (Based on your Agent description) ---
-AGENT_ROLES = [
-    "Email Operations Assistant (Search, Reply, Forward)",
-    "RAG Knowledge Specialist (Policy & Workflow retrieval)",
-    "Document Processing Agent (PDF/DOCX to Structured Data)",
-    "Operational Secretary (Policy-aware task execution)"
-]
-
-def refactor_for_agent(instruction, role):
-    # Prompt được tinh chỉnh để ép output cực sạch và giữ nguyên ý đồ gốc
+def refactor_instruction_v2(instruction, agent_type):
+    config = AGENT_CONFIGS[agent_type]
+    
+    # Prompt nâng cao để khử lặp và tăng tính tự nhiên
     prompt = f"""
     [Task]
-    Refactor the following 'Original Instruction' into a professional corporate task for a '{role}'.
-    
-    [Guidelines]
-    1. PRESERVE CORE INTENT: Do not change the fundamental question, request, 
-    or goal of the original instruction.
-    2. PROFESSIONAL CONTEXT: Rewrite it as a formal workplace request 
-    (e.g., an email task, a policy query, or a report processing step).
-    3. NO CONVERSATION: Return ONLY the refactored text. 
-    4. NO PREAMBLE/POSTAMBLE: Do not include "Here is...", "Refactored task:", or any quotes.
+    Refactor the 'Original Instruction' into a professional task for an AI Agent role: '{config['role_name']}'.
+    The Agent uses these tools: {', '.join(config['tools_involved'])}.
+
+    [Strict Guidelines to avoid Clichés]
+    1. NO "PLEASE" OVERUSE: Avoid starting every sentence with "Please". Use direct imperatives (e.g., "Search for...", "Analyze...", "Generate...") or situational inquiries.
+    2. VARY STRUCTURE: Mix short direct commands with complex multi-step requests.
+    3. CORE INTENT: Keep the original question/task from Dolly but wrap it in the agent's context ({config['context']}).
+    4. NO ROBOTIC PREFACE: Do not use "As an AI...", "Here is the task...". Return ONLY the refactored text.
+    5. TERMINOLOGY: Use professional terms like 'thread', 'record', 'database query', 'structured export', or 'internal policy'.
 
     Original Instruction: {instruction}
     
-    Refactored Instruction for {role}:"""
+    Refactored Task for {config['role_name']}:"""
 
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                # Đưa chỉ dẫn quan trọng vào system role để tăng độ tuân thủ
-                {"role": "system", "content": "You are a professional data annotator. You only output the final refactored text without any explanation or conversational filler."},
+                {"role": "system", "content": "You are a senior workflow engineer. You rewrite instructions to be natural, professional, and diverse in tone. You never repeat the same polite fillers."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7, # Giữ độ biến hóa nhưng vẫn bám sát intent
-            max_tokens=300
+            temperature=0.85, # Tăng temperature để đa dạng hóa văn phong
+            max_tokens=350
         )
-        return response.choices[0].message.content.strip().replace('"', '') # Xóa bỏ dấu ngoặc kép nếu có
+        return response.choices[0].message.content.strip().replace('"', '')
     except Exception as e:
+        print(f"Error at: {e}")
         return None
-        return None
 
-# --- 3. EXECUTION ---
-print(f"Loading Dolly-15K and refactoring {args.samples} records...")
-ds = load_dataset("databricks/databricks-dolly-15k")["train"]
-data = list(ds)[:args.samples]
+# --- 2. EXECUTION PIPELINE ---
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--samples", type=int, default=None, help="Number of records to refactor")
+    parser.add_argument("--output", type=str, default="corporate_dolly_v2.jsonl")
+    args = parser.parse_args()
 
-output = []
-for item in tqdm(data):
-    role = random.choice(AGENT_ROLES)
-    refactored = refactor_for_agent(item['instruction'], role)
-    if refactored:
-        output.append({
-            "agent_role": role,
-            "instruction": refactored,
-            "original": item['instruction']
-        })
+    print(f"[*] Loading Databricks-Dolly-15K...")
+    dataset = load_dataset("databricks/databricks-dolly-15k")["train"]
+    
+    # Xáo trộn để lấy mẫu ngẫu nhiên từ nhiều category khác nhau
+    raw_data = list(dataset)
+    random.shuffle(raw_data)
+    
+    selected_samples = raw_data[:args.samples]
 
-# Save results
-out_file = "corporate_dolly_benign.jsonl"
-with open(out_file, "w", encoding="utf-8") as f:
-    for entry in output:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    results = []
+    print(f"[*] Refactoring {args.samples} instructions with Role-Tool mapping...")
 
-print(f"\n[SUCCESS] Refactored {len(output)} records saved to {out_file}")
+    for item in tqdm(selected_samples):
+        # Chọn ngẫu nhiên 1 trong 3 nhóm năng lực của Agent
+        agent_type = random.choice(list(AGENT_CONFIGS.keys()))
+        
+        refactored_text = refactor_instruction_v2(item['instruction'], agent_type)
+        
+        if refactored_text:
+            results.append({
+                "agent_role": AGENT_CONFIGS[agent_type]["role_name"],
+                "instruction": refactored_text,
+                "original_intent": item['instruction'],
+                "category": item['category'],
+                "tools_potential": AGENT_CONFIGS[agent_type]["tools_involved"]
+            })
+
+    # Lưu file
+    with open(args.output, "w", encoding="utf-8") as f:
+        for entry in results:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    print(f"\n[OK] Success! Generated {len(results)} samples.")
+    print(f"[OK] View your data in: {args.output}")
+
+if __name__ == "__main__":
+    main()
