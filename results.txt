@@ -69,3 +69,212 @@ deberta-v3-base-prompt-injection-v2 0.831784        14.16
                 Your Custom XGBoost 0.809249   N/A (Fast)
         distilbert-prompt-injection 0.787765         3.39
           deberta-v3-base-injection 0.777050        13.00
+
+
+
+JAN 7, 2026 ______________________________________________________________________________
+
+(venv) bang@jarvis:~/projects/models$ python ./layer_1_v2.py --minilm
+
+[INFO] Mode: LOCAL | Model: all-MiniLM-L6-v2 | Dimensions: 384
+
+[1/5] Loading Dolly 15K (Benign)...
+Generating train split: 15011 examples [00:00, 678039.32 examples/s]
+[2/5] Loading Suspicious Data from ../datasets/deepset_prompt_injections_refactored.jsonl...
+[3/5] Generating Embeddings...
+Batches: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████| 235/235 [00:05<00:00, 45.70it/s]
+Batches: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 11/11 [00:01<00:00,  8.92it/s]
+[4/5] Training Models...
+  > IsolationForest...
+  > OneClassSVM...
+  > kNN-Distance...
+  > PCA-Reconstruction...
+  > Deep AutoEncoder...
+
+============================================================
+RESULTS FOR all-MiniLM-L6-v2 (Dolly vs. Suspicious)
+============================================================
+             Model      TNR  Suspicious_Det_Rate      AUC  Lat_sec
+       OneClassSVM 0.940393             0.983384 0.996709 1.031372
+PCA-Reconstruction 0.950383             0.974320 0.993401 0.135793
+      kNN-Distance 0.933400             0.974320 0.993052 0.207031
+  Deep-AutoEncoder 0.936730             0.977341 0.991601 0.557553
+   IsolationForest 0.949051             0.524169 0.893764 0.134543
+(venv) bang@jarvis:~/projects/models$ python ./layer_1_v2.py --openai
+
+[INFO] Mode: OPENAI | Model: text-embedding-3-large | Dimensions: 3072
+
+[1/5] Loading Dolly 15K (Benign)...
+[2/5] Loading Suspicious Data from ../datasets/deepset_prompt_injections_refactored.jsonl...
+[3/5] Generating Embeddings...
+OpenAI Embedding: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 235/235 [03:35<00:00,  1.09it/s]
+OpenAI Embedding: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 11/11 [00:10<00:00,  1.01it/s]
+[4/5] Training Models...
+  > IsolationForest...
+  > OneClassSVM...
+  > kNN-Distance...
+  > PCA-Reconstruction...
+  > Deep AutoEncoder...
+
+============================================================
+RESULTS FOR text-embedding-3-large (Dolly vs. Suspicious)
+============================================================
+             Model      TNR  Suspicious_Det_Rate      AUC   Lat_sec
+PCA-Reconstruction 0.939394             1.000000 0.999807  5.812790
+  Deep-AutoEncoder 0.940726             1.000000 0.999768  1.114689
+       OneClassSVM 0.937729             1.000000 0.999622 10.413556
+      kNN-Distance 0.929404             1.000000 0.999259  1.311861
+   IsolationForest 0.944056             0.889728 0.975960  0.209815
+(venv) bang@jarvis:~/projects/models$ python ./layer_1_v2.py --bert
+
+[INFO] Mode: LOCAL | Model: bert-base-nli-mean-tokens | Dimensions: 768
+
+[1/5] Loading Dolly 15K (Benign)...
+[2/5] Loading Suspicious Data from ../datasets/deepset_prompt_injections_refactored.jsonl...
+[3/5] Generating Embeddings...
+Batches: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████| 235/235 [00:21<00:00, 10.75it/s]
+Batches: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 11/11 [00:00<00:00, 13.98it/s]
+[4/5] Training Models...
+  > IsolationForest...
+  > OneClassSVM...
+  > kNN-Distance...
+  > PCA-Reconstruction...
+  > Deep AutoEncoder...
+
+============================================================
+RESULTS FOR bert-base-nli-mean-tokens (Dolly vs. Suspicious)
+============================================================
+             Model      TNR  Suspicious_Det_Rate      AUC  Lat_sec
+PCA-Reconstruction 0.945055             0.998489 0.999271 0.380330
+  Deep-AutoEncoder 0.935398             0.998489 0.999095 0.762366
+      kNN-Distance 0.938062             0.998489 0.999041 0.391568
+       OneClassSVM 0.950050             0.989426 0.996108 2.231625
+   IsolationForest 0.950050             0.953172 0.988440 0.146600
+
+Layer 2 - BENCHMARK
+=== Latency Benchmark (ms per detect call) ===
+AhoCorasick | avg=0.0009  p50=0.0009  p95=0.0010  p99=0.0010  min=0.0009  max=0.0055  matches=0
+Regex       | avg=1.1709  p50=1.1521  p95=1.2888  p99=1.4946  min=1.1175  max=2.0124  matches=0
+Bisect      | avg=0.8418  p50=0.8320  p95=0.8826  p99=1.0625  min=0.8097  max=1.7356  matches=0
+
+
+More benchmark:
+[*] Starting Comprehensive Benchmark (1000 iterations per sample)...
+    > Testing Sample: Classic_Jailbreak
+    > Testing Sample: Indirect_Injection_Email
+    > Testing Sample: RAG_Poisoning_Doc
+    > Testing Sample: Malicious_Tool_Output
+    > Testing Sample: Benign_Corporate_Task
+
+================================================================================
+LAYER 2 COMPREHENSIVE BENCHMARK RESULTS
+================================================================================
++--------------------------+---------------+----------------+---------------+-------------+-------------+---------------------------------------------------------------+
+| Sample                   | Detector      | Is_Malicious   |   Match_Count |      Avg_ms |      P95_ms | Matched_Patterns                                              |
+|--------------------------+---------------+----------------+---------------+-------------+-------------+---------------------------------------------------------------|
+| Classic_Jailbreak        | Aho-Corasick  | True           |             1 | 0.000611909 | 0.000646929 | ['reveal your system prompt']                                 |
+| Classic_Jailbreak        | Regex-Full    | True           |             1 | 0.341959    | 0.375458    | ['reveal your system prompt']                                 |
+| Classic_Jailbreak        | Bisect-Search | True           |             1 | 0.184494    | 0.205836    | ['reveal your system prompt']                                 |
+| Indirect_Injection_Email | Aho-Corasick  | False          |             0 | 0.000627085 | 0.000664033 | []                                                            |
+| Indirect_Injection_Email | Regex-Full    | False          |             0 | 0.560254    | 0.613716    | []                                                            |
+| Indirect_Injection_Email | Bisect-Search | False          |             0 | 0.208558    | 0.233089    | []                                                            |
+| RAG_Poisoning_Doc        | Aho-Corasick  | True           |             3 | 0.000906333 | 0.000936817 | ['sudo access', 'bypass security', 'bypass security filters'] |
+| RAG_Poisoning_Doc        | Regex-Full    | True           |             2 | 0.468032    | 0.521628    | ['sudo access', 'Bypass security']                            |
+| RAG_Poisoning_Doc        | Bisect-Search | True           |             3 | 0.239432    | 0.260387    | ['sudo access', 'bypass security', 'bypass security filters'] |
+| Malicious_Tool_Output    | Aho-Corasick  | True           |             1 | 0.000738524 | 0.000767002 | ['developer mode enabled']                                    |
+| Malicious_Tool_Output    | Regex-Full    | True           |             1 | 0.493548    | 0.550284    | ['Developer mode enabled']                                    |
+| Malicious_Tool_Output    | Bisect-Search | True           |             1 | 0.246765    | 0.290774    | ['developer mode enabled']                                    |
+| Benign_Corporate_Task    | Aho-Corasick  | False          |             0 | 0.000742558 | 0.000751886 | []                                                            |
+| Benign_Corporate_Task    | Regex-Full    | False          |             0 | 0.625818    | 0.680482    | []                                                            |
+| Benign_Corporate_Task    | Bisect-Search | False          |             0 | 0.237334    | 0.263846    | []                                                            |
++--------------------------+---------------+----------------+---------------+-------------+-------------+---------------------------------------------------------------+
+
+
+# LAYER 3
+============================================================
+LAYER 3 (LLM AUDITOR) PERFORMANCE METRICS
+============================================================
+Total Samples: 100
+Confusion Matrix: TN=82 FP=3 FN=2 TP=13
+TPR (Recall/Sensitivity): 0.8667
+FPR (Fall-out):           0.0353
+Precision:               0.8125
+Accuracy:                0.9500
+============================================================
+[OK] Detailed results saved to: layer3_deepset_eval_results.csv
+[OK] No API/format errors detected.
+
+Latency (ms):
+count     100.000000
+mean     1306.302182
+std       271.377525
+min       885.712257
+50%      1222.946056
+90%      1627.335957
+95%      1789.091123
+99%      2070.940932
+max      2488.601944
+
+
+Jan 8, 2026
+================================================================================
+LAYER 1 BENCHMARK RESULTS (all-MiniLM-L6-v2)
+================================================================================
+             Model  TP  FP   TN  FN  TPR (Det. Rate)  TNR (Benign Recall)      AUC  Latency
+       OneClassSVM 650 140 2863  12         0.981873             0.953380 0.997254 1.099952
+       AutoEncoder 647 144 2859  15         0.977341             0.952048 0.996001 0.000000
+      kNN-Distance 637 138 2865  25         0.962236             0.954046 0.993117 0.188920
+PCA-Reconstruction 635 150 2853  27         0.959215             0.950050 0.990331 0.051754
+   IsolationForest 405 144 2859 257         0.611782             0.952048 0.924116 0.137610
+
+================================================================================
+LAYER 1 BENCHMARK RESULTS (bert-base-nli-mean-tokens)
+================================================================================
+             Model  TP  FP   TN  FN  TPR (Det. Rate)  TNR (Benign Recall)      AUC  Latency
+PCA-Reconstruction 661 168 2835   1         0.998489             0.944056 0.999358 0.073920
+      kNN-Distance 660 154 2849   2         0.996979             0.948718 0.999332 0.369788
+       AutoEncoder 654 159 2844   8         0.987915             0.947053 0.998405 0.000000
+       OneClassSVM 655 146 2857   7         0.989426             0.951382 0.996612 2.401183
+   IsolationForest 637 143 2860  25         0.962236             0.952381 0.992430 0.154138
+
+================================================================================
+LAYER 1 BENCHMARK RESULTS (text-embedding-3-large)
+================================================================================
+             Model  TP  FP   TN  FN  TPR (Det. Rate)  TNR (Benign Recall)      AUC   Latency
+       AutoEncoder 662 173 2830   0         1.000000             0.942391 0.999929  0.000000
+       OneClassSVM 662 146 2857   0         1.000000             0.951382 0.999862 13.512367
+PCA-Reconstruction 662 151 2852   0         1.000000             0.949717 0.999814  5.214408
+      kNN-Distance 661 135 2868   1         0.998489             0.955045 0.999502  1.266117
+   IsolationForest 570 155 2848  92         0.861027             0.948385 0.975929  0.204448
+
+
+VERSION 2:
+=====================================================================================
+LAYER 1 BENCHMARK RESULTS (all-MiniLM-L6-v2)
+=====================================================================================
+             Model  TP  FP   TN  FN  TPR (Recall)  FPR (Fall-out)  Precision  F1-Score  TNR (Specificity)    AUC  Latency
+       OneClassSVM 650 140 2863  12        0.9819          0.0466     0.8228    0.8953             0.9534 0.9973   1.1099
+  Deep-AutoEncoder 654 130 2873   8        0.9879          0.0433     0.8342    0.9046             0.9567 0.9967   0.1607
+      kNN-Distance 637 138 2865  25        0.9622          0.0460     0.8219    0.8866             0.9540 0.9931   0.1854
+PCA-Reconstruction 635 150 2853  27        0.9592          0.0500     0.8089    0.8777             0.9500 0.9903   0.0789
+   IsolationForest 405 144 2859 257        0.6118          0.0480     0.7377    0.6689             0.9520 0.9241   0.1302
+
+=====================================================================================
+LAYER 1 BENCHMARK RESULTS (bert-base-nli-mean-tokens)
+=====================================================================================
+             Model  TP  FP   TN  FN  TPR (Recall)  FPR (Fall-out)  Precision  F1-Score  TNR (Specificity)    AUC  Latency
+PCA-Reconstruction 661 168 2835   1        0.9985          0.0559     0.7973    0.8867             0.9441 0.9994   0.1256
+      kNN-Distance 660 154 2849   2        0.9970          0.0513     0.8108    0.8943             0.9487 0.9993   0.3527
+  Deep-AutoEncoder 654 155 2848   8        0.9879          0.0516     0.8084    0.8892             0.9484 0.9983   0.4014
+       OneClassSVM 655 146 2857   7        0.9894          0.0486     0.8177    0.8954             0.9514 0.9966   2.3996
+   IsolationForest 637 143 2860  25        0.9622          0.0476     0.8167    0.8835             0.9524 0.9924   0.1505
+
+=====================================================================================
+LAYER 1 BENCHMARK RESULTS (text-embedding-3-large)
+=====================================================================================
+             Model  TP  FP   TN  FN  TPR (Recall)  FPR (Fall-out)  Precision  F1-Score  TNR (Specificity)    AUC  Latency
+  Deep-AutoEncoder 662 168 2835   0        1.0000          0.0559     0.7976    0.8874             0.9441 0.9999   0.7668
+       OneClassSVM 662 146 2857   0        1.0000          0.0486     0.8193    0.9007             0.9514 0.9999  11.3030
+PCA-Reconstruction 662 151 2852   0        1.0000          0.0503     0.8143    0.8976             0.9497 0.9998   5.8169
+      kNN-Distance 661 136 2867   1        0.9985          0.0453     0.8294    0.9061             0.9547 0.9995   1.2726
+   IsolationForest 574 144 2859  88        0.8671          0.0480     0.7994    0.8319             0.9520 0.9753   0.1986
