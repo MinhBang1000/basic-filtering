@@ -25,7 +25,7 @@ ERROR_CSV  = "layer3_deepset_eval_errors.csv"
 # Choose a model you have access to.
 # Note: If your chosen model does NOT support json_schema Structured Outputs,
 # this code will auto-fallback to json_object mode.
-DEFAULT_MODEL = os.getenv("LAYER3_MODEL", "gpt-5-mini-2025-08-07")
+DEFAULT_MODEL = os.getenv("LAYER3_MODEL", "gpt-4o-mini")
 
 # Security stance: FAIL-CLOSED (recommended).
 # If the auditor call fails, we mark the sample as malicious (prediction=1).
