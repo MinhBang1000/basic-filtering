@@ -1,0 +1,46 @@
+1
+=====================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 + L3
+=====================================================================================
+[LAYER 1 - ANOMALY DETECTION (vs Category)]
+  - Confusion Matrix: TN=78, FP=4, FN=0, TP=18
+  - ACC (Accuracy):    0.9600
+  - TPR (Recall):      1.0000
+  - FPR:               0.0488
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=82, FP=10, FN=0, TP=8
+  - ACC (Accuracy):    0.9000
+  - TPR (Recall):      1.0000
+  - F1-Score:          0.6154
+  - FPR:               0.1087
+
+[EFFICIENCY & LATENCY]
+  - Avg Total Latency: 363.00 ms
+  - L3 Trigger Rate:   22.00%
+=====================================================================================
+
+2
+=====================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 + L3
+=====================================================================================
+
+[LAYER 1 - ANOMALY DETECTION (vs Category)]
+  - Confusion Matrix: TN=78, FP=4, FN=0, TP=18
+  - ACC (Accuracy):    0.9600
+  - TPR (Recall):      1.0000
+  - FPR:               0.0488
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=92, FP=0, FN=2, TP=6
+  - ACC (Accuracy):    0.9800
+  - TPR (Recall):      0.7500
+  - F1-Score:          0.8571
+  - FPR:               0.0000
+
+[EFFICIENCY & LATENCY]
+  - Avg Total Latency: 307.99 ms
+  - L3 Trigger Rate:   22.00%
+=====================================================================================
+
+3
