@@ -263,7 +263,7 @@ PCA-Reconstruction 635 150 2853  27        0.9592          0.0500     0.8089    
 LAYER 1 BENCHMARK RESULTS (bert-base-nli-mean-tokens)
 =====================================================================================
              Model  TP  FP   TN  FN  TPR (Recall)  FPR (Fall-out)  Precision  F1-Score  TNR (Specificity)    AUC  Latency
-PCA-Reconstruction 661 168 2835   1        0.9985          0.0559     0.7973    0.8867             0.9441 0.9994   0.1256
+PCA-Reconstruction 661 168 2835   1        0.9985          0.0559     0.7973    0.8867             0.9441 0.9994   0.1056
       kNN-Distance 660 154 2849   2        0.9970          0.0513     0.8108    0.8943             0.9487 0.9993   0.3527
   Deep-AutoEncoder 654 155 2848   8        0.9879          0.0516     0.8084    0.8892             0.9484 0.9983   0.4014
        OneClassSVM 655 146 2857   7        0.9894          0.0486     0.8177    0.8954             0.9514 0.9966   2.3996
@@ -278,3 +278,226 @@ LAYER 1 BENCHMARK RESULTS (text-embedding-3-large)
 PCA-Reconstruction 662 151 2852   0        1.0000          0.0503     0.8143    0.8976             0.9497 0.9998   5.8169
       kNN-Distance 661 136 2867   1        0.9985          0.0453     0.8294    0.9061             0.9547 0.9995   1.2726
    IsolationForest 574 144 2859  88        0.8671          0.0480     0.7994    0.8319             0.9520 0.9753   0.1986
+
+
+
+FULL EVALUATION 
+================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 (bert-base-nli-mean-tokens) + L3 (gpt-4o-mini)
+================================================================================
+
+[LAYER 1 - ANOMALY DETECTION PERFORMANCE (vs Category)]
+  - Confusion Matrix: TN=2836, FP=167, FN=1, TP=661
+  - Detection Rate (TPR): 0.9985
+  - False Alarm Rate (FPR): 0.0556
+  - Avg Latency L1: 16.16 ms
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=3226, FP=176, FN=22, TP=241
+  - System Recall (TPR): 0.9163
+  - System Precision: 0.5779
+  - System F1-Score: 0.7088
+  - System FPR: 0.0517
+
+[EFFICIENCY & LATENCY ANALYSIS]
+  - L3 Trigger Rate: 22.59% (Chỉ 828 mẫu cần LLM xử lý)
+  - Avg Total Latency: 318.50 ms
+  - Estimated Latency Reduction vs Always-L3: 76.20%
+================================================================================
+
+=====================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 + L3
+=====================================================================================
+
+[LAYER 1 - ANOMALY DETECTION (vs Category)]
+  - Confusion Matrix: TN=2836, FP=167, FN=1, TP=661
+  - ACC (Accuracy):    0.9542
+  - AUC:               0.9994
+  - TPR (Recall):      0.9985
+  - FPR:               0.0556
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=2903, FP=499, FN=1, TP=262
+  - ACC (Accuracy):    0.8636
+  - AUC:               0.9248
+  - TPR (Recall):      0.9962
+  - F1-Score:          0.5117
+  - FPR:               0.1467
+
+[EFFICIENCY & LATENCY]
+  - Avg Total Latency: 305.29 ms
+  - L3 Trigger Rate:   22.59%
+=====================================================================================
+
+=====================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 + L3
+=====================================================================================
+
+[LAYER 1 - ANOMALY DETECTION (vs Category)]
+  - Confusion Matrix: TN=2836, FP=167, FN=1, TP=661
+  - ACC (Accuracy):    0.9542
+  - TPR (Recall):      0.9985
+  - FPR:               0.0556
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=3389, FP=13, FN=67, TP=196
+  - ACC (Accuracy):    0.9782
+  - TPR (Recall):      0.7452
+  - F1-Score:          0.8305
+  - FPR:               0.0038
+
+[EFFICIENCY & LATENCY]
+  - Avg Total Latency: 249.56 ms
+  - L3 Trigger Rate:   22.59%
+=====================================================================================
+
+==========================================================================================
+SOTA CLASSIFIERS COMPARISON REPORT
+==========================================================================================
+             Model  TP  FP   TN  FN  TPR (Recall)    FPR  Precision  F1-Score  Avg_Lat_ms
+      ProtectAI-v1 119   5 3397 144        0.4525 0.0015     0.9597    0.6150     11.0341
+      ProtectAI-v2 109   5 3397 154        0.4144 0.0015     0.9561    0.5782     11.1430
+Injection-Sentinel 244  60 3342  19        0.9278 0.0176     0.8026    0.8607     16.1656
+
+==============================================================================================================
+SOTA CLASSIFIERS COMPARISON REPORT (ACC & AUC)
+==============================================================================================================
+             Model  Accuracy    AUC  TPR (Recall)    FPR  F1-Score  Avg_Lat_ms
+Injection-Sentinel    0.9784 0.9833        0.9278 0.0176    0.8607     15.4835
+      ProtectAI-v2    0.9566 0.8065        0.4144 0.0015    0.5782     12.8891
+      ProtectAI-v1    0.9593 0.6974        0.4525 0.0015    0.6150     10.5704
+
+
+TEST trên tăng dần từng sample
+100 samples:
+=====================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 + L3
+=====================================================================================
+
+[LAYER 1 - ANOMALY DETECTION (vs Category)]
+  - Confusion Matrix: TN=78, FP=4, FN=0, TP=18
+  - ACC (Accuracy):    0.9600
+  - TPR (Recall):      1.0000
+  - FPR:               0.0488
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=92, FP=0, FN=2, TP=6
+  - ACC (Accuracy):    0.9800
+  - TPR (Recall):      0.7500
+  - F1-Score:          0.8571
+  - FPR:               0.0000
+
+[EFFICIENCY & LATENCY]
+  - Avg Total Latency: 307.99 ms
+  - L3 Trigger Rate:   22.00%
+=====================================================================================
+
+==============================================================================================================
+SOTA CLASSIFIERS COMPARISON REPORT (ACC & AUC)
+==============================================================================================================
+             Model  Accuracy    AUC  TPR (Recall)    FPR  F1-Score  Avg_Lat_ms
+Injection-Sentinel    0.9700 1.0000        1.0000 0.0326    0.8421     15.6237
+          Mdeberta    0.9600 1.0000        1.0000 0.0435    0.8000     11.3844
+         aibastion    0.9300 0.9484        0.6250 0.0435    0.5882     12.0737
+      ProtectAI-v2    0.9300 0.8492        0.1250 0.0000    0.2222     10.5181
+      ProtectAI-v1    0.9200 0.4348        0.0000 0.0000    0.0000     17.3567
+
+
+200 samples
+=====================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 + L3
+=====================================================================================
+
+[LAYER 1 - ANOMALY DETECTION (vs Category)]
+  - Confusion Matrix: TN=152, FP=9, FN=0, TP=39
+  - ACC (Accuracy):    0.9550
+  - TPR (Recall):      1.0000
+  - FPR:               0.0559
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=184, FP=0, FN=3, TP=13
+  - ACC (Accuracy):    0.9850
+  - TPR (Recall):      0.8125
+  - F1-Score:          0.8966
+  - FPR:               0.0000
+
+[EFFICIENCY & LATENCY]
+  - Avg Total Latency: 321.43 ms
+  - L3 Trigger Rate:   24.00%
+=====================================================================================
+
+==============================================================================================================
+SOTA CLASSIFIERS COMPARISON REPORT (ACC & AUC)
+==============================================================================================================
+             Model  Accuracy    AUC  TPR (Recall)    FPR  F1-Score  Avg_Lat_ms
+Injection-Sentinel    0.9700 0.9969        1.0000 0.0326    0.8421     15.0248
+          Mdeberta    0.9400 0.9918        0.9375 0.0598    0.7143     10.4889
+         aibastion    0.9300 0.9538        0.6250 0.0435    0.5882     10.7109
+      ProtectAI-v2    0.9400 0.8074        0.2500 0.0000    0.4000     10.5374
+      ProtectAI-v1    0.9400 0.5265        0.2500 0.0000    0.4000     14.5507
+
+500 samples
+=====================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 + L3
+=====================================================================================
+
+[LAYER 1 - ANOMALY DETECTION (vs Category)]
+  - Confusion Matrix: TN=378, FP=24, FN=0, TP=98
+  - ACC (Accuracy):    0.9520
+  - TPR (Recall):      1.0000
+  - FPR:               0.0597
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=456, FP=2, FN=8, TP=34
+  - ACC (Accuracy):    0.9800
+  - TPR (Recall):      0.8095
+  - F1-Score:          0.8718
+  - FPR:               0.0044
+
+[EFFICIENCY & LATENCY]
+  - Avg Total Latency: 345.83 ms
+  - L3 Trigger Rate:   24.40%
+=====================================================================================
+
+==============================================================================================================
+SOTA CLASSIFIERS COMPARISON REPORT (ACC & AUC)
+==============================================================================================================
+             Model  Accuracy    AUC  TPR (Recall)    FPR  F1-Score  Avg_Lat_ms
+Injection-Sentinel    0.9760 0.9965        1.0000 0.0262    0.8750     20.6805
+          Mdeberta    0.9540 0.9962        0.9762 0.0480    0.7810     10.4859
+         aibastion    0.9520 0.9691        0.7143 0.0262    0.7143     10.9523
+      ProtectAI-v2    0.9380 0.7280        0.2857 0.0022    0.4364     14.8256
+      ProtectAI-v1    0.9420 0.6160        0.3333 0.0022    0.4912     16.4444
+
+1000 samples
+=====================================================================================
+INTEGRATED DEFENSE EVALUATION: L1 + L3
+=====================================================================================
+
+[LAYER 1 - ANOMALY DETECTION (vs Category)]
+  - Confusion Matrix: TN=762, FP=46, FN=0, TP=192
+  - ACC (Accuracy):    0.9540
+  - TPR (Recall):      1.0000
+  - FPR:               0.0569
+
+[TOTAL SYSTEM PERFORMANCE (vs Label)]
+  - Confusion Matrix: TN=916, FP=3, FN=16, TP=65
+  - ACC (Accuracy):    0.9810
+  - TPR (Recall):      0.8025
+  - F1-Score:          0.8725
+  - FPR:               0.0033
+
+[EFFICIENCY & LATENCY]
+  - Avg Total Latency: 321.00 ms
+  - L3 Trigger Rate:   23.80%
+=====================================================================================
+
+==============================================================================================================
+SOTA CLASSIFIERS COMPARISON REPORT (ACC & AUC)
+==============================================================================================================
+             Model  Accuracy    AUC  TPR (Recall)    FPR  F1-Score  Avg_Lat_ms
+          Mdeberta    0.9560 0.9959        0.9753 0.0457    0.7822     10.5086
+Injection-Sentinel    0.9760 0.9866        0.9383 0.0207    0.8636     15.0846
+         aibastion    0.9530 0.9346        0.6543 0.0207    0.6928     11.0495
+      ProtectAI-v2    0.9460 0.7852        0.3457 0.0011    0.5091     10.3310
+      ProtectAI-v1    0.9480 0.6373        0.3827 0.0022    0.5439     11.0884
