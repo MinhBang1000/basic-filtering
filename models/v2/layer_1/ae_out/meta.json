@@ -1,0 +1,12 @@
+{
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "l2_norm": true,
+  "max_length": 256,
+  "latent_dim": 128,
+  "hidden_dim": 512,
+  "dropout": 0.1,
+  "err_kind": "mse",
+  "threshold": 0.0012751584872603416,
+  "target_fpr": 0.01,
+  "seed": 42
+}
