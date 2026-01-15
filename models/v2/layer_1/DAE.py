@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -30,8 +30,22 @@ def set_seed(seed: int = 42):
 def read_csv(path: str, text_col: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     if text_col not in df.columns:
-        raise ValueError(f"{path} must contain a '{text_col}' column. Found: {list(df.columns)[:20]} ...")
+        raise ValueError(f"{path} must contain '{text_col}'. Found columns: {list(df.columns)[:30]}")
     return df
+
+
+def ensure_label(df: pd.DataFrame, label_col: str, value: int) -> pd.DataFrame:
+    if label_col not in df.columns:
+        df[label_col] = value
+    df[label_col] = value
+    df[label_col] = df[label_col].astype(int)
+    return df
+
+
+def safe_value_counts(df: pd.DataFrame, col: str) -> Dict:
+    if col in df.columns:
+        return df[col].value_counts().to_dict()
+    return {}
 
 
 # ----------------------------
@@ -96,11 +110,10 @@ class HFEmbedder(nn.Module):
         last_hidden = out.last_hidden_state  # (B, T, H)
 
         mask = attention_mask.unsqueeze(-1).to(last_hidden.dtype)  # (B, T, 1)
-        summed = (last_hidden * mask).sum(dim=1)                  # (B, H)
-        denom = mask.sum(dim=1).clamp(min=1e-6)                   # (B, 1)
+        summed = (last_hidden * mask).sum(dim=1)                   # (B, H)
+        denom = mask.sum(dim=1).clamp(min=1e-6)                    # (B, 1)
         mean_pooled = summed / denom                               # (B, H)
 
-        # ✅ IMPORTANT for sentence-transformers + anomaly detection stability
         if self.l2_norm:
             mean_pooled = F.normalize(mean_pooled, p=2, dim=1)
 
@@ -156,8 +169,12 @@ def train_ae(
 ) -> None:
     ae.train()
     embedder.eval()
+
     opt = torch.optim.AdamW(ae.parameters(), lr=lr)
-    scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
+
+    # New AMP API (fix FutureWarning)
+    use_amp = (device.type == "cuda")
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
 
     for ep in range(1, epochs + 1):
         pbar = tqdm(loader, desc=f"Train epoch {ep}/{epochs}")
@@ -166,11 +183,12 @@ def train_ae(
             input_ids = batch.input_ids.to(device, non_blocking=True)
             attn = batch.attention_mask.to(device, non_blocking=True)
 
+            # embeddings are frozen
             with torch.no_grad():
                 x = embedder.encode(input_ids, attn)
 
             opt.zero_grad(set_to_none=True)
-            with torch.cuda.amp.autocast(enabled=(device.type == "cuda")):
+            with torch.amp.autocast("cuda", enabled=use_amp):
                 x_hat, _ = ae(x)
                 loss = reconstruction_error(x, x_hat, kind=err_kind).mean()
 
@@ -213,7 +231,7 @@ def score_dataset(
     return np.concatenate(all_scores), np.concatenate(all_labels)
 
 
-def pick_threshold_from_benign(scores: np.ndarray, labels: np.ndarray, fpr: float = 0.01) -> float:
+def threshold_from_benign(scores: np.ndarray, labels: np.ndarray, fpr: float) -> float:
     benign_scores = scores[labels == 0]
     if len(benign_scores) == 0:
         raise ValueError("No benign samples (label=0) in validation to set threshold.")
@@ -229,7 +247,7 @@ def evaluate_with_threshold(scores: np.ndarray, labels: np.ndarray, thr: float) 
     tn, fp, fn, tp = cm.ravel().tolist()
 
     out = {
-        "threshold": thr,
+        "threshold": float(thr),
         "TN": tn, "FP": fp, "FN": fn, "TP": tp,
         "FPR": fp / (fp + tn + 1e-12),
         "TPR": tp / (tp + fn + 1e-12),
@@ -243,9 +261,42 @@ def evaluate_with_threshold(scores: np.ndarray, labels: np.ndarray, thr: float) 
         out["AUROC"] = None
 
     out["classification_report"] = classification_report(
-        y_true, y_pred, digits=4, target_names=["benign(0)", "malicious(1)"]
+        y_true, y_pred, digits=4,
+        target_names=["benign(0)", "malicious(1)"],
+        zero_division=0
     )
     return out
+
+
+def tpr_at_fpr_sweep(scores: np.ndarray, labels: np.ndarray, fprs=(0.001, 0.005, 0.01, 0.02, 0.05)) -> dict:
+    """
+    Report TPR when threshold is set by benign at various target FPRs.
+    """
+    y = labels.astype(int)
+    out = {}
+    for fpr in fprs:
+        thr = threshold_from_benign(scores, y, fpr=fpr)
+        y_pred = (scores >= thr).astype(int)
+        cm = confusion_matrix(y, y_pred, labels=[0, 1])
+        tn, fp, fn, tp = cm.ravel().tolist()
+        out[str(fpr)] = {
+            "thr": float(thr),
+            "FPR": fp / (fp + tn + 1e-12),
+            "TPR": tp / (tp + fn + 1e-12),
+            "TP": int(tp), "FN": int(fn), "FP": int(fp), "TN": int(tn),
+        }
+    return out
+
+
+def sample_malicious(df: pd.DataFrame, seed: int, mal_frac: float, mal_n: int) -> pd.DataFrame:
+    if mal_n and mal_n > 0:
+        n = min(mal_n, len(df))
+        return df.sample(n=n, random_state=seed).reset_index(drop=True)
+    if mal_frac and mal_frac > 0:
+        frac = min(mal_frac, 1.0)
+        return df.sample(frac=frac, random_state=seed).reset_index(drop=True)
+    # default: use all
+    return df.reset_index(drop=True)
 
 
 # ----------------------------
@@ -253,29 +304,42 @@ def evaluate_with_threshold(scores: np.ndarray, labels: np.ndarray, thr: float) 
 # ----------------------------
 def main():
     parser = argparse.ArgumentParser()
+
+    # data
     parser.add_argument("--benignset", type=str, default="../../../datasets/processed_datasets/benign_universal.csv")
     parser.add_argument("--maliciousset", type=str, default="../../../datasets/processed_datasets/malicious_universal.csv")
-
     parser.add_argument("--text_col", type=str, default="text")
     parser.add_argument("--label_col", type=str, default="label")
 
+    # model
     parser.add_argument("--model_name", type=str, default="sentence-transformers/all-MiniLM-L6-v2")
-    parser.add_argument("--l2_norm", action="store_true", help="L2-normalize embeddings (recommended).")
-    parser.add_argument("--no_l2_norm", action="store_true", help="Disable L2 normalization.")
+    parser.add_argument("--l2_norm", action="store_true")
+    parser.add_argument("--no_l2_norm", action="store_true")
     parser.add_argument("--max_length", type=int, default=256)
-    parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--num_workers", type=int, default=2)
 
+    # AE
     parser.add_argument("--latent_dim", type=int, default=128)
     parser.add_argument("--hidden_dim", type=int, default=512)
     parser.add_argument("--dropout", type=float, default=0.1)
 
+    # train
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--err_kind", type=str, default="mse", choices=["mse", "l1"])
-
     parser.add_argument("--target_fpr", type=float, default=0.01)
+
+    # loader
+    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--num_workers", type=int, default=2)
+
+    # splits
     parser.add_argument("--seed", type=int, default=42)
+
+    # malicious probe control (use mal_n if set; else mal_frac)
+    parser.add_argument("--mal_frac", type=float, default=0.03, help="malicious fraction used in test mix (0=disable)")
+    parser.add_argument("--mal_n", type=int, default=0, help="malicious count used in test mix (0=disable)")
+
+    # output
     parser.add_argument("--out_dir", type=str, default="ae_out")
     args = parser.parse_args()
 
@@ -285,52 +349,44 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Device:", device)
 
-    # Decide l2_norm default True unless explicitly disabled
+    # L2 norm decision
     l2_norm = True
     if args.no_l2_norm:
         l2_norm = False
     if args.l2_norm:
         l2_norm = True
 
-    # Load data
+    # ----------------------------
+    # 1) Load & split benign (80/10/10)
+    # ----------------------------
     benign_df = read_csv(args.benignset, args.text_col)
-    if args.label_col not in benign_df.columns:
-        benign_df[args.label_col] = 0
-    benign_df[args.label_col] = benign_df[args.label_col].astype(int)
+    benign_df = ensure_label(benign_df, args.label_col, 0)
 
     train_df, temp_df = train_test_split(
-        benign_df, random_state=args.seed, shuffle=True, test_size=0.2
+        benign_df, test_size=0.2, shuffle=True, random_state=args.seed
     )
-    val_df, test_df = train_test_split(
-        temp_df, test_size=0.5, random_state=args.seed, shuffle=True
+    val_df, benign_test_df = train_test_split(
+        temp_df, test_size=0.5, shuffle=True, random_state=args.seed
     )
 
+    # ----------------------------
+    # 2) Load malicious & sample probe for test mix
+    # ----------------------------
     malicious_df = read_csv(args.maliciousset, args.text_col)
-    if args.label_col not in malicious_df.columns:
-        malicious_df[args.label_col] = 1
-    malicious_df[args.label_col] = 1  # force
+    malicious_df = ensure_label(malicious_df, args.label_col, 1)
 
-    # take 3% malicious as probe
-    mprobe_df = malicious_df.sample(frac=0.03, random_state=args.seed).reset_index(drop=True)
+    mprobe_df = sample_malicious(malicious_df, seed=args.seed, mal_frac=args.mal_frac, mal_n=args.mal_n)
 
-    # mix test
-    test_df = pd.concat([test_df, mprobe_df], ignore_index=True)
+    # test mix
+    test_df = pd.concat([benign_test_df, mprobe_df], ignore_index=True)
     test_df = test_df.sample(frac=1.0, random_state=args.seed).reset_index(drop=True)
 
+    print("Split sizes:", {"train": len(train_df), "val": len(val_df), "benign_test": len(benign_test_df), "mprobe": len(mprobe_df), "test_mix": len(test_df)})
     print("Test label counts:", test_df[args.label_col].value_counts().to_dict())
 
-    # Train data: benign-only if label exists
-    if args.label_col in train_df.columns:
-        train_df = train_df[train_df[args.label_col].astype(int) == 0].reset_index(drop=True)
-
-    train_texts = train_df[args.text_col].astype(str).tolist()
-    val_texts   = val_df[args.text_col].astype(str).tolist()
-    test_texts  = test_df[args.text_col].astype(str).tolist()
-
-    val_labels  = val_df[args.label_col].astype(int).tolist()
-    test_labels = test_df[args.label_col].astype(int).tolist()
-
-    # Models
+    # ----------------------------
+    # 3) Build models
+    # ----------------------------
     embedder = HFEmbedder(args.model_name, l2_norm=l2_norm).to(device)
     ae = MLPAutoEncoder(
         dim_in=embedder.hidden_size,
@@ -339,26 +395,31 @@ def main():
         dropout=args.dropout,
     ).to(device)
 
-    # DataLoaders
+    # ----------------------------
+    # 4) Dataloaders
+    # ----------------------------
     pin = (device.type == "cuda")
+
     train_loader = DataLoader(
-        TextDataset(train_texts, labels=None),
+        TextDataset(train_df[args.text_col].astype(str).tolist(), labels=None),
         batch_size=args.batch_size,
         shuffle=True,
         collate_fn=collate_fn(embedder.tokenizer, args.max_length),
         num_workers=args.num_workers,
         pin_memory=pin,
     )
+
     val_loader = DataLoader(
-        TextDataset(val_texts, labels=val_labels),
+        TextDataset(val_df[args.text_col].astype(str).tolist(), labels=val_df[args.label_col].astype(int).tolist()),
         batch_size=args.batch_size,
         shuffle=False,
         collate_fn=collate_fn(embedder.tokenizer, args.max_length),
         num_workers=args.num_workers,
         pin_memory=pin,
     )
+
     test_loader = DataLoader(
-        TextDataset(test_texts, labels=test_labels),
+        TextDataset(test_df[args.text_col].astype(str).tolist(), labels=test_df[args.label_col].astype(int).tolist()),
         batch_size=args.batch_size,
         shuffle=False,
         collate_fn=collate_fn(embedder.tokenizer, args.max_length),
@@ -366,18 +427,32 @@ def main():
         pin_memory=pin,
     )
 
-    # Train
-    print(f"Training AE on {len(train_texts)} benign samples...")
-    train_ae(ae, embedder, train_loader, device, lr=args.lr, epochs=args.epochs, err_kind=args.err_kind)
+    # ----------------------------
+    # 5) Train
+    # ----------------------------
+    print(f"Training AE on {len(train_df)} benign samples...")
+    train_ae(
+        ae=ae,
+        embedder=embedder,
+        loader=train_loader,
+        device=device,
+        lr=args.lr,
+        epochs=args.epochs,
+        err_kind=args.err_kind,
+    )
 
-    # Validation -> threshold
-    print("Scoring validation set...")
+    # ----------------------------
+    # 6) Threshold from benign val
+    # ----------------------------
+    print("Scoring validation set (benign-only) ...")
     val_scores, val_y = score_dataset(ae, embedder, val_loader, device, err_kind=args.err_kind)
-    thr = pick_threshold_from_benign(val_scores, val_y, fpr=args.target_fpr)
+    thr = threshold_from_benign(val_scores, val_y, fpr=args.target_fpr)
     print(f"Chosen threshold @ target_fpr={args.target_fpr}: {thr:.6f}")
 
-    # Test eval
-    print("Scoring test set...")
+    # ----------------------------
+    # 7) Test on mix
+    # ----------------------------
+    print("Scoring test mix ...")
     test_scores, test_y = score_dataset(ae, embedder, test_loader, device, err_kind=args.err_kind)
     report = evaluate_with_threshold(test_scores, test_y, thr)
 
@@ -385,35 +460,79 @@ def main():
     print(json.dumps({k: v for k, v in report.items() if k != "classification_report"}, indent=2))
     print(report["classification_report"])
 
-    # Save artifacts
+    # extra: sweep operating points
+    sweep = tpr_at_fpr_sweep(test_scores, test_y, fprs=(0.001, 0.005, 0.01, 0.02, 0.05))
+    print("\n=== TPR @ FPR sweep (threshold set by benign in test_mix) ===")
+    print(json.dumps(sweep, indent=2))
+
+    # extra: per-source TPR if available
+    per_source = {}
+    if "source" in test_df.columns:
+        # align sources with scores order (test_df order == loader order == scores order)
+        srcs = test_df["source"].astype(str).tolist()
+        for src in sorted(set(srcs)):
+            idx = np.array([s == src for s in srcs], dtype=bool)
+            if idx.sum() == 0:
+                continue
+            y_s = test_y[idx]
+            sc_s = test_scores[idx]
+            # only meaningful if this slice has malicious
+            if (y_s == 1).sum() == 0:
+                continue
+            rep_s = evaluate_with_threshold(sc_s, y_s, thr)
+            per_source[src] = {
+                "n": int(idx.sum()),
+                "malicious": int((y_s == 1).sum()),
+                "TPR": rep_s["TPR"],
+                "FNR": rep_s["FNR"],
+                "FPR": rep_s["FPR"],
+            }
+
+        print("\n=== Per-source summary (if source column exists) ===")
+        print(json.dumps(per_source, indent=2))
+
+    # ----------------------------
+    # 8) Save artifacts
+    # ----------------------------
     ckpt_path = os.path.join(args.out_dir, "ae.pt")
     meta_path = os.path.join(args.out_dir, "meta.json")
     npy_path  = os.path.join(args.out_dir, "test_scores.npy")
+    stats_path = os.path.join(args.out_dir, "test_mix_stats.json")
 
     torch.save(ae.state_dict(), ckpt_path)
     np.save(npy_path, test_scores)
 
+    meta = {
+        "model_name": args.model_name,
+        "l2_norm": l2_norm,
+        "max_length": args.max_length,
+        "latent_dim": args.latent_dim,
+        "hidden_dim": args.hidden_dim,
+        "dropout": args.dropout,
+        "err_kind": args.err_kind,
+        "threshold": float(thr),
+        "target_fpr": float(args.target_fpr),
+        "seed": int(args.seed),
+        "mal_frac": float(args.mal_frac),
+        "mal_n": int(args.mal_n),
+    }
     with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(
-            {
-                "model_name": args.model_name,
-                "l2_norm": l2_norm,
-                "max_length": args.max_length,
-                "latent_dim": args.latent_dim,
-                "hidden_dim": args.hidden_dim,
-                "dropout": args.dropout,
-                "err_kind": args.err_kind,
-                "threshold": thr,
-                "target_fpr": args.target_fpr,
-                "seed": args.seed,
-            },
-            f,
-            indent=2,
-        )
+        json.dump(meta, f, indent=2)
+
+    stats = {
+        "sizes": {"train": len(train_df), "val": len(val_df), "benign_test": len(benign_test_df), "mprobe": len(mprobe_df), "test_mix": len(test_df)},
+        "test_label_counts": test_df[args.label_col].value_counts().to_dict(),
+        "mal_source_counts": safe_value_counts(mprobe_df, "source"),
+        "sweep": sweep,
+        "per_source": per_source,
+    }
+    with open(stats_path, "w", encoding="utf-8") as f:
+        json.dump(stats, f, indent=2)
 
     print(f"\nSaved: {ckpt_path}")
     print(f"Saved: {meta_path}")
     print(f"Saved: {npy_path}")
+    print(f"Saved: {stats_path}")
 
 
 if __name__ == "__main__":

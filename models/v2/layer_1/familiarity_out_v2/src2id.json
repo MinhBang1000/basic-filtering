@@ -1,0 +1,8 @@
+{
+  "boolq": 0,
+  "deepset": 1,
+  "docRED": 2,
+  "platypus": 3,
+  "puffin": 4,
+  "tapir": 5
+}

@@ -8,5 +8,7 @@
   "err_kind": "mse",
   "threshold": 0.0012751584872603416,
   "target_fpr": 0.01,
-  "seed": 42
+  "seed": 42,
+  "mal_frac": 0.03,
+  "mal_n": 3000
 }

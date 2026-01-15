@@ -1,0 +1,99 @@
+(venv) bang@jarvis:~/projects/models/v2/layer_1$ python contrastive_familiarity.py   --benignset ../../../datasets/processed_datasets/benign_universal.csv   --maliciousset ../../../datasets/processed_datasets/malicious_universal.csv   --epochs 2   --batch_size 128   --temperature 0.05   --hard_neg_k 32   --score_mode knn   --knn_k 10   --bank_subsample 50000   --thr_mode benign_fpr   --target_fpr 0.01   --mal_n 3000
+Device: cuda
+Split sizes: {'train': 122759, 'val': 15345, 'benign_test': 15345, 'mprobe': 3000, 'test_mix': 18345}
+Test label counts: {0: 15345, 1: 3000}
+Benign domains: 6 -> {'boolq': 0, 'deepset': 1, 'docRED': 2, 'platypus': 3, 'puffin': 4, 'tapir': 5}
+Training SupCon (balanced domains) on 122759 benign samples...
+Train 1/2: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 959/959 [02:34<00:00,  6.23it/s, loss=3.15]
+Train 2/2: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 959/959 [02:33<00:00,  6.26it/s, loss=3.06]
+Embedding benign TRAIN (bank)...
+Embedding: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 960/960 [01:40<00:00,  9.58it/s]
+Scoring benign VAL...
+Embedding: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 120/120 [00:12<00:00,  9.87it/s]
+Chosen thr (benign_fpr) @ target_fpr=0.01: 0.007878
+Scoring TEST MIX...
+Embedding: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 144/144 [00:15<00:00,  9.12it/s]
+
+=== Test Report (Familiarity -> Unfamiliarity) ===
+{
+  "threshold": 0.0078777726739645,
+  "TN": 15223,
+  "FP": 122,
+  "FN": 2193,
+  "TP": 807,
+  "FPR": 0.007950472466601497,
+  "TPR": 0.2689999999999999,
+  "TNR": 0.9920495275333984,
+  "FNR": 0.7309999999999998,
+  "AUROC": 0.9800083849245139,
+  "F1_mal": 0.4107915500127259
+}
+              precision    recall  f1-score   support
+
+   benign(0)     0.8741    0.9920    0.9293     15345
+  unf/mal(1)     0.8687    0.2690    0.4108      3000
+
+    accuracy                         0.8738     18345
+   macro avg     0.8714    0.6305    0.6701     18345
+weighted avg     0.8732    0.8738    0.8445     18345
+
+
+=== TPR @ FPR sweep (threshold from benign in TEST MIX) ===
+{
+  "0.001": {
+    "thr": 0.020379727706313133,
+    "FPR": 0.0010426849136526554,
+    "TPR": 0.01133333333333333,
+    "TP": 34,
+    "FN": 2966,
+    "FP": 16,
+    "TN": 15329,
+    "F1_mal": 0.022295081967213116
+  },
+  "0.005": {
+    "thr": 0.01002134382724762,
+    "FPR": 0.005017921146953404,
+    "TPR": 0.11899999999999997,
+    "TP": 357,
+    "FN": 2643,
+    "FP": 77,
+    "TN": 15268,
+    "F1_mal": 0.2079207920792079
+  },
+  "0.01": {
+    "thr": 0.007153816055506468,
+    "FPR": 0.010035842293906808,
+    "TPR": 0.3109999999999999,
+    "TP": 933,
+    "FN": 2067,
+    "FP": 154,
+    "TN": 15191,
+    "F1_mal": 0.4565696109615855
+  },
+  "0.02": {
+    "thr": 0.0047030262649059296,
+    "FPR": 0.020006516780710328,
+    "TPR": 0.6259999999999998,
+    "TP": 1878,
+    "FN": 1122,
+    "FP": 307,
+    "TN": 15038,
+    "F1_mal": 0.7243972999035679
+  },
+  "0.05": {
+    "thr": 0.0025035138241946697,
+    "FPR": 0.05004887585532746,
+    "TPR": 0.956333333333333,
+    "TP": 2869,
+    "FN": 131,
+    "FP": 768,
+    "TN": 14577,
+    "F1_mal": 0.864547235196625
+  }
+}
+
+Saved: familiarity_out_v2/encoder.pt
+Saved: familiarity_out_v2/src2id.json
+Saved: familiarity_out_v2/meta.json
+Saved: familiarity_out_v2/unf_test.npy
+Saved: familiarity_out_v2/z_train_bank.npy
