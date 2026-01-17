@@ -469,6 +469,8 @@ def main():
     test_df = pd.concat([benign_test_df, mprobe_df], ignore_index=True)
     test_df = test_df.sample(frac=1.0, random_state=args.seed).reset_index(drop=True)
 
+    test_df.to_csv("../../../datasets/processed_datasets/test_mix.csv")
+
     print("Split sizes:", {
         "train": len(train_df),
         "val": len(val_df),

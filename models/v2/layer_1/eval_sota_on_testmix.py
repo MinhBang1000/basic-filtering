@@ -206,7 +206,7 @@ def per_source_summary(df: pd.DataFrame, scores: np.ndarray, thr: float, label_c
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--test_csv", type=str, required=True)
+    ap.add_argument("--test_csv", type=str, required=True, default="../../../datasets/processed_datasets/test_mix.csv")
     ap.add_argument("--text_col", type=str, default="text")
     ap.add_argument("--label_col", type=str, default="label")
     ap.add_argument("--source_col", type=str, default="source")
