@@ -52,3 +52,24 @@ tôi đang nghĩ, nếu ta dùng AD hoặc contrastive learning để phân bi�
 Từ đó suy ra, chúng ta không thể đổi ngữ cảnh từ nhận dạng malicious và benign sang familiar và unfamiliar được. Chúng ta phải đối mặt với malicious và benign categories.
 
 Bạn thấy nhận xét này thế nào nếu bạn là người cực kỳ am hiểu về NLP
+
+# Plan chuẩn hơn:
+- Build ngay LLM Agent
+- Adapt một benign dataset như Dolly vào trong agent này, cùng với các benign từ InjectAgent dataset, cùng với các benign trong RAG Poisoned hay poisoned dataset => Tách ra train (val lấy threshold) và test
+    + Refactor dataset lại thành dạng message được dùng trong Agent Conversation History
+- Adapt malicious dataset của prompt injection và InjectAgent dataset vào trong Agent
+    + Refactor dataset lại thành dạng message luôn.
+- Dùng contrastive learning để giúp SBERT học ngay trên đó (Nhớ là longtext) => Layer 1 (only benign dataset)
+- Dùng cả malicious data trong các => Layer 2 (Both balance distribution between our benign and malicious dataset)
+- Dùng LLM Self-Defense (with different thread ID) để check phần còn lại => Layer 3 (Không train hay fine tune gì cả)
+
+# Cách evaluation:
+- ASR và TSR: trộn lẫn hai loại task này, thực hiện toàn bộ => Tính ra số lượng Benign Task và Malicious Task bằng cách đếm theo cơ chế.
+    + Điểm khó là các prompt injection attack từ các tập dữ liệu bên ngoài không biết làm sao chúng mới gọi là thành công => Có thể nghĩ đến cách để trả về một biến true và false bằng configuration (Ví dụ: Nếu bạn từ chối trả lời thì nên thêm chữ false vào đầu văn bảng => Trích xuất chữ đó ra)
+- Có toggle để biết chúng ta đang ở mode nào: Có 3 filter hay không? Thứ tự các filter là gì? Đo thời gian filter hoàn thành từng task để lấy ra AVG_M, MAX_M, MIN_M, AVG_B, MAX_B, MIN_B (latency ms).
+- Khi filter thì cũng check luôn nhãn của dữ liệu đầu vào đó là gì? Dựa trên đầu ra để lưu cái đó là benign hay malicious.
+    + Tính ra TP, FP, TN, FN
+    + Tính ra TPR, FPR
+    + Tính ra Precisio, F1 Score, AUC
+    + Tính ra Accuracy
+    + Tính ra mỗi lần test là theo từng mức threshold của layer 1 (default = 1%, 5%, 10%, 20%, 50%)
