@@ -1,0 +1,22 @@
+{
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "proj_dim": 256,
+  "temperature": 0.05,
+  "max_length": 256,
+  "target_fpr": 0.01,
+  "threshold": 0.0078777726739645,
+  "seed": 42,
+  "mal_n": 3000,
+  "mal_frac": 0.0,
+  "num_domains": 6,
+  "score_mode": "knn",
+  "knn_k": 10,
+  "bank_subsample": 50000,
+  "thr_mode": "benign_fpr",
+  "hard_neg_k": 32,
+  "epochs": 2,
+  "lr": 2e-05,
+  "report_F1_mal": 0.4107915500127259,
+  "report_FPR": 0.007950472466601497,
+  "report_TPR": 0.2689999999999999
+}

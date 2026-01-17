@@ -44,3 +44,11 @@ hoặc mô hình AI siêu nhẹ để nhận diện và loại bỏ tức thì c
 hoặc LLM để thẩm định chuyên sâu, giúp phân biệt chính xác giữa dữ liệu lành tính mới (zero-day benign) và mã độc mới (zero-day malicious) trong số các mẫu nghi ngờ còn lại, 
 từ đó giảm tối đa tỷ lệ báo động giả (FPR) và đảm bảo an toàn tuyệt đối trước khi dữ liệu được Agent xử lý.
 
+
+tôi đang nghĩ, nếu ta dùng AD hoặc contrastive learning để phân biệt malicious và benign data trong ngữ cảnh injection attack of LLM thì ta khó có thể làm được vì:
+1. Malicious là do con người quyết định chứ không phải do một distibution bất thường từ dữ liệu số học rồi làm nó trở thành malicious => Không có khác biệt số học.
+2. Train trên benign giúp chúng ta chỉ nhận dạng 2 thứ: Familiar data, và Unfamiliar data chứ không hề giúp chúng ta làm cho detect malicious và benign => Nguy hiểm vì nếu hacker biết được những gì ta familiar thì có thể nó sẽ bị break rất dễ dàng.
+
+Từ đó suy ra, chúng ta không thể đổi ngữ cảnh từ nhận dạng malicious và benign sang familiar và unfamiliar được. Chúng ta phải đối mặt với malicious và benign categories.
+
+Bạn thấy nhận xét này thế nào nếu bạn là người cực kỳ am hiểu về NLP

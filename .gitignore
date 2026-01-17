@@ -13,7 +13,9 @@ huggingface/
 *.pt
 *.bin
 *.onnx
-
+*.csv
+*.zip
+*.npy
 # --- Môi trường và Cấu hình (Nhạy cảm/Riêng biệt) ---
 # Loại bỏ môi trường ảo
 venv/
@@ -32,4 +34,4 @@ __pycache__/
 
 # --- Hệ thống ---
 .DS_Store
-Thumbs.db
+Thumbs.dbmodels/v2/layer_1/familiarity_out_v2/

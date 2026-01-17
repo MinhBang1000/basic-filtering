@@ -1,0 +1,12 @@
+{
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "proj_dim": 256,
+  "temperature": 0.07,
+  "max_length": 256,
+  "target_fpr": 0.01,
+  "threshold": 0.04310798645019531,
+  "seed": 42,
+  "mal_n": 3000,
+  "mal_frac": 0.0,
+  "num_domains": 6
+}
